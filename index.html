@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>GameHub - Бесплатные Игры</title>
+    <style>
+        /* --- ОБЩИЕ СТИЛИ --- */
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #1a1a2e;
+            color: white;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- ГЛАВНОЕ МЕНЮ --- */
+        header {
+            background-color: #16213e;
+            padding: 20px;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        h1 { margin: 0; color: #0ff; text-shadow: 0 0 10px #0ff; letter-spacing: 2px; }
+        p { color: #aaa; margin: 5px 0 0; }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 40px 20px;
+            gap: 30px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .game-card {
+            background: linear-gradient(145deg, #0f3460, #16213e);
+            width: 280px;
+            border-radius: 15px;
+            overflow: hidden;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(15, 52, 96, 0.6);
+            border-color: #e94560;
+        }
+
+        .card-img {
+            width: 100%;
+            height: 150px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .game-card h3 { margin: 15px 0; color: #fff; font-size: 20px; }
+        .game-card span { display: block; margin-bottom: 15px; color: #aaa; font-size: 12px; }
+
+        /* --- ЭКРАН ИГРЫ --- */
+        #game-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #111;
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-area {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            background-color: #000;
+            display: block;
+            border: 4px solid #333;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            font-size: 30px;
+            color: #fff;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            line-height: 40px;
+        }
+        .close-btn:hover { color: #e94560; }
+
+        .score-board {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #0ff;
+            text-shadow: 0 0 5px #0ff;
+        }
+
+        /* Управление для телефонов */
+        .controls-mobile {
+            display: none;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        @media (max-width: 600px) { 
+            .controls-mobile { display: flex; flex-direction: column; align-items: center; } 
+        }
+        
+        .ctrl-btn {
+            background: #333; 
+            color: white; 
+            border: 1px solid #555;
+            padding: 15px 25px;
+            font-size: 16px; 
+            border-radius: 10px; 
+            cursor: pointer;
+            user-select: none;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .ctrl-btn:active { background: #555; }
+        
+        /* Специфичные стили для Сапера (мобильные кнопки) */
+        .minesweeper-controls {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .mode-indicator { font-size: 14px; color: #aaa; margin-bottom: 5px; }
+
+    </style>
+</head>
+<body>
+
+    <!-- ГЛАВНАЯ СТРАНИЦА -->
+    <header>
+        <h1>GameHub</h1>
+        <p>Выбери игру и погнали!</p>
+    </header>
+
+    <div class="container" id="menu">
+        <!-- Тетрис -->
+        <div class="game-card" onclick="openGame('tetris')">
+            <div class="card-img">🧱</div>
+            <h3>Тетрис</h3>
+            <span>Классика жанра</span>
+        </div>
+
+        <!-- Змейка -->
+        <div class="game-card" onclick="openGame('snake')">
+            <div class="card-img">🐍</div>
+            <h3>Змейка</h3>
+            <span>Собирай еду, не врезайся</span>
+        </div>
+
+        <!-- Гонки -->
+        <div class="game-card" onclick="openGame('racing')">
+            <div class="card-img">🏎️</div>
+            <h3>Гонки</h3>
+            <span>Уворачивайся на скорости</span>
+        </div>
+
+        <!-- Сапёр (НОВОЕ) -->
+        <div class="game-card" onclick="openGame('minesweeper')">
+            <div class="card-img">💣</div>
+            <h3>Сапёр</h3>
+            <span>Найди все мины</span>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ИГРЫ -->
+    <div id="game-screen">
+        <div class="game-area">
+            <div class="score-board" id="score-display">Счет: 0</div>
+            <div class="close-btn" onclick="closeGame()">&times;</div>
+            
+            <canvas id="game-canvas"></canvas>
+
+            <!-- Кнопки для старых игр -->
+            <div class="controls-mobile" id="default-controls">
+                <div></div>
+                <button class="ctrl-btn" id="btn-up">▲</button>
+                <div></div>
+                <button class="ctrl-btn" id="btn-left">◀</button>
+                <button class="ctrl-btn" id="btn-down">▼</button>
+                <button class="ctrl-btn" id="btn-right">▶</button>
+            </div>
+
+            <!-- Кнопки для Сапера -->
+            <div class="minesweeper-controls" id="ms-controls">
+                <div class="mode-indicator">Режим: <span id="ms-mode-text">Открытие</span></div>
+                <button class="ctrl-btn" id="btn-ms-mode">Сменить режим (Флажок)</button>
+                <button class="ctrl-btn" id="btn-ms-restart">Рестарт</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- СИСТЕМА УПРАВЛЕНИЯ ПЛАТФОРМОЙ --- */
+        const menuScreen = document.getElementById('menu');
+        const gameScreen = document.getElementById('game-screen');
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score-display');
+        
+        const defaultControls = document.getElementById('default-controls');
+        const msControls = document.getElementById('ms-controls');
+
+        let currentGame = null;
+        let animationId; 
+        let gameInterval;
+
+        function openGame(gameName) {
+            menuScreen.style.display = 'none';
+            gameScreen.style.display = 'flex';
+            currentGame = gameName;
+            
+            // Сброс кнопок
+            defaultControls.style.display = 'none';
+            msControls.style.display = 'none';
+
+            if (gameName === 'tetris') { defaultControls.style.display = 'grid'; startTetris(); }
+            if (gameName === 'snake') { defaultControls.style.display = 'grid'; startSnake(); }
+            if (gameName === 'racing') { defaultControls.style.display = 'grid'; startRacing(); }
+            if (gameName === 'minesweeper') { msControls.style.display = 'flex'; startMinesweeper(); }
+        }
+
+        function closeGame() {
+            gameScreen.style.display = 'none';
+            menuScreen.style.display = 'flex';
+            
+            cancelAnimationFrame(animationId);
+            clearInterval(gameInterval);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            currentGame = null;
+            
+            // Убираем слушатели кликов для сапера
+            canvas.onmousedown = null;
+            canvas.oncontextmenu = null;
+            canvas.ontouchstart = null;
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!currentGame) return;
+            if (currentGame === 'tetris') tetrisKeyDown(e);
+            if (currentGame === 'snake') snakeKeyDown(e);
+            if (currentGame === 'racing') racingKeyDown(e);
+        });
+
+        /* --- ЛОГИКА ТЕТРИСА --- */
+        let t_arena, t_player, t_dropCounter, t_dropInterval, t_lastTime;
+        
+        function startTetris() {
+            canvas.width = 240; canvas.height = 400;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(20, 20);
+            
+            t_arena = createMatrix(12, 20);
+            t_player = { pos: {x:0, y:0}, matrix: null, score: 0 };
+            t_dropCounter = 0; t_dropInterval = 1000; t_lastTime = 0;
+            
+            t_playerReset();
+            t_updateScore();
+            t_update();
+
+            document.getElementById('btn-up').onclick = () => t_playerRotate();
+            document.getElementById('btn-down').onclick = () => t_playerDrop();
+            document.getElementById('btn-left').onclick = () => t_playerMove(-1);
+            document.getElementById('btn-right').onclick = () => t_playerMove(1);
+        }
+
+        function createMatrix(w, h) { return Array.from({length: h}, () => Array(w).fill(0)); }
+        
+        function t_createPiece(type) {
+            if (type === 'I') return [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]];
+            if (type === 'L') return [[0,2,0],[0,2,0],[0,2,2]];
+            if (type === 'J') return [[0,3,0],[0,3,0],[3,3,0]];
+            if (type === 'O') return [[4,4],[4,4]];
+            if (type === 'Z') return [[5,5,0],[0,5,5],[0,0,0]];
+            if (type === 'S') return [[0,6,6],[6,6,0],[0,0,0]];
+            if (type === 'T') return [[0,7,0],[7,7,7],[0,0,0]];
+        }
+
+        const t_colors = [null, '#FF0D72', '#0DC2FF', '#0DFF72', '#F538FF', '#FF8E0D', '#FFE138', '#3877FF'];
+
+        function t_draw() {
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            t_drawMatrix(t_arena, {x:0, y:0}); t_drawMatrix(t_player.matrix, t_player.pos);
+        }
+
+        function t_drawMatrix(matrix, offset) {
+            matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) {
+                        ctx.fillStyle = t_colors[value];
+                        ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
+                    }
+                });
+            });
+        }
+
+        function t_collide(arena, player) {
+            const [m, o] = [player.matrix, player.pos];
+            for (let y = 0; y < m.length; ++y) {
+                for (let x = 0; x < m[y].length; ++x) {
+                    if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) return true;
+                }
+            }
+            return false;
+        }
+
+        function t_merge(arena, player) {
+            player.matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) arena[y + player.pos.y][x + player.pos.x] = value;
+                });
+            });
+        }
+
+        function t_arenaSweep() {
+            let rowCount = 1;
+            outer: for (let y = t_arena.length - 1; y > 0; --y) {
+                for (let x = 0; x < t_arena[y].length; ++x) {
+                    if (t_arena[y][x] === 0) continue outer;
+                }
+                const row = t_arena.splice(y, 1)[0].fill(0);
+                t_arena.unshift(row); ++y;
+                t_player.score += rowCount * 10; rowCount *= 2;
+            }
+            t_updateScore();
+        }
+
+        function t_playerDrop() {
+            t_player.pos.y++;
+            if (t_collide(t_arena, t_player)) {
+                t_player.pos.y--;
+                t_merge(t_arena, t_player);
+                t_playerReset();
+                t_arenaSweep();
+            }
+            t_dropCounter = 0;
+        }
+
+        function t_playerMove(dir) {
+            t_player.pos.x += dir;
+            if (t_collide(t_arena, t_player)) t_player.pos.x -= dir;
+        }
+
+        function t_playerRotate() {
+            const matrix = t_player.matrix;
+            for (let y = 0; y < matrix.length; ++y) {
+                for (let x = 0; x < y; ++x) {
+                    [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
+                }
+            }
+            matrix.forEach(row => row.reverse());
+        }
+
+        function t_playerReset() {
+            const pieces = 'ILJOTSZ';
+            t_player.matrix = t_createPiece(pieces[Math.random() * pieces.length | 0]);
+            t_player.pos.y = 0;
+            t_player.pos.x = (t_arena[0].length / 2 | 0) - (t_player.matrix[0].length / 2 | 0);
+            if (t_collide(t_arena, t_player)) {
+                t_arena.forEach(row => row.fill(0));
+                t_player.score = 0; t_updateScore();
+            }
+        }
+
+        function t_update(time = 0) {
+            if (currentGame !== 'tetris') return;
+            const deltaTime = time - t_lastTime;
+            t_lastTime = time;
+            t_dropCounter += deltaTime;
+            if (t_dropCounter > t_dropInterval) t_playerDrop();
+            t_draw();
+            animationId = requestAnimationFrame(t_update);
+        }
+
+        function t_updateScore() { scoreEl.innerText = "Счет: " + t_player.score; }
+
+        function tetrisKeyDown(e) {
+            if (e.keyCode === 37) t_playerMove(-1);
+            else if (e.keyCode === 39) t_playerMove(1);
+            else if (e.keyCode === 40) t_playerDrop();
+            else if (e.keyCode === 38) t_playerRotate();
+        }
+
+        /* --- ЛОГИКА ЗМЕЙКИ --- */
+        let s_score, s_snake, s_food, s_dx, s_dy, s_gridSize, s_tileCount;
+
+        function startSnake() {
+            canvas.width = 400; canvas.height = 400;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            s_score = 0; s_gridSize = 20; s_tileCount = canvas.width / s_gridSize;
+            s_snake = [{x: 10, y: 10}]; s_food = {x: 15, y: 15};
+            s_dx = 0; s_dy = 0;
+            scoreEl.innerText = 0;
+            
+            clearInterval(gameInterval);
+            gameInterval = setInterval(s_update, 100);
+            s_draw();
+
+            document.getElementById('btn-up').onclick = () => s_setDirection(0, -1);
+            document.getElementById('btn-down').onclick = () => s_setDirection(0, 1);
+            document.getElementById('btn-left').onclick = () => s_setDirection(-1, 0);
+            document.getElementById('btn-right').onclick = () => s_setDirection(1, 0);
+        }
+
+        function s_setDirection(x, y) {
+            if (x === -s_dx && s_dx !== 0) return;
+            if (y === -s_dy && s_dy !== 0) return;
+            if (s_dx === 0 && s_dy === 0) { s_dx = x; s_dy = y; } 
+            else { s_dx = x; s_dy = y; }
+        }
+
+        function s_update() {
+            if (currentGame !== 'snake') return;
+            if (s_dx === 0 && s_dy === 0) { s_draw(); return; }
+            const head = {x: s_snake[0].x + s_dx, y: s_snake[0].y + s_dy};
+            if (head.x < 0 || head.x >= s_tileCount || head.y < 0 || head.y >= s_tileCount) { s_gameOver(); return; }
+            for (let part of s_snake) { if (part.x === head.x && part.y === head.y) { s_gameOver(); return; } }
+            s_snake.unshift(head);
+            if (head.x === s_food.x && head.y === s_food.y) {
+                s_score++; scoreEl.innerText = s_score; s_placeFood();
+            } else { s_snake.pop(); }
+            s_draw();
+        }
+
+        function s_draw() {
+            ctx.fillStyle = 'black'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0ff';
+            for (let part of s_snake) { ctx.fillRect(part.x * s_gridSize, part.y * s_gridSize, s_gridSize - 2, s_gridSize - 2); }
+            ctx.fillStyle = '#e94560';
+            ctx.fillRect(s_food.x * s_gridSize, s_food.y * s_gridSize, s_gridSize - 2, s_gridSize - 2);
+            if (s_dx === 0 && s_dy === 0) { ctx.fillStyle = 'white'; ctx.font = '20px Arial'; ctx.textAlign = 'center'; ctx.fillText('Нажми стрелку!', canvas.width/2, canvas.height/2); }
+        }
+
+        function s_placeFood() { s_food.x = Math.floor(Math.random() * s_tileCount); s_food.y = Math.floor(Math.random() * s_tileCount); }
+
+        function s_gameOver() {
+            clearInterval(gameInterval);
+            ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0,0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white'; ctx.font = '30px Arial'; ctx.textAlign = 'center'; ctx.fillText('Game Over!', canvas.width/2, canvas.height/2 - 10);
+            ctx.font = '20px Arial'; ctx.fillText('Нажмите кнопку', canvas.width/2, canvas.height/2 + 20);
+            s_dx = 0; s_dy = 0; s_snake = [{x: 10, y: 10}]; s_score = 0; scoreEl.innerText = 0;
+            gameInterval = setInterval(s_update, 100);
+        }
+
+        function snakeKeyDown(e) {
+            switch (e.keyCode) {
+                case 37: s_setDirection(-1, 0); break;
+                case 38: s_setDirection(0, -1); break;
+                case 39: s_setDirection(1, 0); break;
+                case 40: s_setDirection(0, 1); break;
+            }
+        }
+
+        /* --- ЛОГИКА ГОНОК --- */
+        let r_player, r_enemies, r_score, r_speed, r_roadLine, r_isGameOver;
+
+        function startRacing() {
+            canvas.width = 400; canvas.height = 400;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            r_player = { x: 175, y: 350, width: 50, height: 80 };
+            r_enemies = []; r_score = 0; r_speed = 5; r_roadLine = 0; r_isGameOver = false;
+            scoreEl.innerText = 0; r_spawnEnemy();
+            
+            document.getElementById('btn-left').onclick = () => r_movePlayer(-20);
+            document.getElementById('btn-right').onclick = () => r_movePlayer(20);
+            document.getElementById('btn-up').onclick = null;
+            document.getElementById('btn-down').onclick = null;
+
+            r_update();
+        }
+
+        function r_movePlayer(dir) {
+            r_player.x += dir;
+            if (r_player.x < 50) r_player.x = 50;
+            if (r_player.x + r_player.width > 350) r_player.x = 350 - r_player.width;
+        }
+
+        function r_spawnEnemy() { let x = Math.random() * (300 - 50) + 50; r_enemies.push({ x: x, y: -100, width: 50, height: 80 }); }
+
+        function r_update() {
+            if (currentGame !== 'racing') return;
+            if (r_isGameOver) return;
+
+            ctx.fillStyle = '#2c3e50'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#7f8c8d'; ctx.fillRect(0, 0, 50, canvas.height); ctx.fillRect(350, 0, 50, canvas.height);
+
+            r_roadLine += r_speed;
+            if (r_roadLine > 40) r_roadLine = 0;
+            ctx.fillStyle = '#f1c40f';
+            for (let i = -40; i < canvas.height; i += 40) { ctx.fillRect(195, i + r_roadLine, 10, 20); }
+
+            if (Math.random() < 0.02) r_spawnEnemy();
+
+            r_enemies.forEach((enemy, index) => {
+                enemy.y += r_speed;
+                ctx.fillStyle = '#e74c3c'; ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                if (r_collision(r_player, enemy)) r_gameOver();
+                if (enemy.y > canvas.height) {
+                    r_enemies.splice(index, 1);
+                    r_score++; scoreEl.innerText = r_score;
+                    if (r_score % 5 === 0) r_speed += 0.5;
+                }
+            });
+
+            ctx.fillStyle = '#3498db'; ctx.fillRect(r_player.x, r_player.y, r_player.width, r_player.height);
+            ctx.fillStyle = '#f1c40f'; ctx.fillRect(r_player.x + 5, r_player.y, 10, 5); ctx.fillRect(r_player.x + 35, r_player.y, 10, 5);
+
+            animationId = requestAnimationFrame(r_update);
+        }
+
+        function r_collision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y;
+        }
+
+        function r_gameOver() {
+            r_isGameOver = true;
+            ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white'; ctx.font = '40px Arial'; ctx.textAlign = 'center'; ctx.fillText('АВАРИЯ!', canvas.width/2, canvas.height/2);
+            ctx.font = '20px Arial'; ctx.fillText('Нажми кнопку', canvas.width/2, canvas.height/2 + 40);
+        }
+
+        function racingKeyDown(e) {
+            if (r_isGameOver) { r_enemies = []; r_score = 0; r_speed = 5; r_isGameOver = false; scoreEl.innerText = 0; r_update(); return; }
+            if (e.keyCode === 37) r_movePlayer(-20);
+            if (e.keyCode === 39) r_movePlayer(20);
+        }
+
+        /* --- ЛОГИКА САПЁРА (НОВОЕ) --- */
+        let m_grid, m_cols, m_rows, m_cellSize, m_minesCount, m_gameOver, m_flagMode;
+        const m_numbers = ['blue', 'green', 'red', 'darkblue', 'brown', 'cyan', 'black', 'grey'];
+
+        function startMinesweeper() {
+            m_cols = 10; m_rows = 10; m_cellSize = 40;
+            canvas.width = m_cols * m_cellSize;
+            canvas.height = m_rows * m_cellSize;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+            m_minesCount = 15;
+            m_gameOver = false;
+            m_flagMode = false; // false = открываем, true = ставим флаг
+            
+            updateModeText();
+            m_createGrid();
+
+            // События мыши
+            canvas.onmousedown = m_handleClick;
+            canvas.oncontextmenu = (e) => { e.preventDefault(); m_toggleFlag(e); };
+            
+            // Кнопки управления
+            document.getElementById('btn-ms-mode').onclick = () => { m_flagMode = !m_flagMode; updateModeText(); };
+            document.getElementById('btn-ms-restart').onclick = startMinesweeper;
+        }
+
+        function updateModeText() {
+            const text = m_flagMode ? "Флажок 🚩" : "Открытие 👆";
+            document.getElementById('ms-mode-text').innerText = text;
+            document.getElementById('btn-ms-mode').innerText = m_flagMode ? "Режим: Открытие" : "Режим: Флажок";
+        }
+
+        function m_createGrid() {
+            m_grid = [];
+            for (let i = 0; i < m_cols; i++) {
+                m_grid[i] = [];
+                for (let j = 0; j < m_rows; j++) {
+                    m_grid[i][j] = { mine: false, revealed: false, flagged: false, neighborCount: 0 };
+                }
+            }
+            
+            // Ставим мины
+            let minesPlaced = 0;
+            while (minesPlaced < m_minesCount) {
+                let x = Math.floor(Math.random() * m_cols);
+                let y = Math.floor(Math.random() * m_rows);
+                if (!m_grid[x][y].mine) {
+                    m_grid[x][y].mine = true;
+                    minesPlaced++;
+                }
+            }
+
+            // Считаем соседей
+            for (let i = 0; i < m_cols; i++) {
+                for (let j = 0; j < m_rows; j++) {
+                    if (!m_grid[i][j].mine) {
+                        m_grid[i][j].neighborCount = m_countMines(i, j);
+                    }
+                }
+            }
+            m_draw();
+        }
+
+        function m_countMines(x, y) {
+            let count = 0;
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    let ni = x + i, nj = y + j;
+                    if (ni >= 0 && ni < m_cols && nj >= 0 && nj < m_rows) {
+                        if (m_grid[ni][nj].mine) count++;
+                    }
+                }
+            }
+            return count;
+        }
+
+        function m_draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = 0; i < m_cols; i++) {
+                for (let j = 0; j < m_rows; j++) {
+                    let cell = m_grid[i][j];
+                    let x = i * m_cellSize;
+                    let y = j * m_cellSize;
+
+                    // Фон
+                    if (cell.revealed) {
+                        ctx.fillStyle = cell.mine ? '#e74c3c' : '#ecf0f1';
+                    } else {
+                        ctx.fillStyle = cell.flagged ? '#f1c40f' : '#bdc3c7';
+                    }
+                    ctx.fillRect(x + 1, y + 1, m_cellSize - 2, m_cellSize - 2);
+
+                    // Текст
+                    if (cell.revealed) {
+                        if (cell.mine) {
+                            ctx.fillStyle = 'black';
+                            ctx.font = 'bold 20px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('💣', x + m_cellSize/2, y + m_cellSize/2 + 6);
+                        } else if (cell.neighborCount > 0) {
+                            ctx.fillStyle = m_numbers[cell.neighborCount - 1];
+                            ctx.font = 'bold 20px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(cell.neighborCount, x + m_cellSize/2, y + m_cellSize/2 + 6);
+                        }
+                    } else if (cell.flagged) {
+                        ctx.fillStyle = 'red';
+                        ctx.font = 'bold 20px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🚩', x + m_cellSize/2, y + m_cellSize/2 + 6);
+                    }
+                }
+            }
+        }
+
+        function m_handleClick(e) {
+            if (m_gameOver) return;
+            let rect = canvas.getBoundingClientRect();
+            let x = Math.floor((e.clientX - rect.left) / m_cellSize);
+            let y = Math.floor((e.clientY - rect.top) / m_cellSize);
+
+            // Для мобильных (переключатель режима)
+            if (m_flagMode) {
+                m_toggleFlag(x, y);
+                return;
+            }
+
+            m_reveal(x, y);
+        }
+
+        function m_toggleFlag(eOrX, yOrUndefined) {
+            if (m_gameOver) return;
+            let x, y;
+            if (yOrUndefined === undefined) {
+                 // Вызов с аргументами
+                 x = eOrX; y = yOrUndefined;
+            } else {
+                // Вызов из события ПКМ
+                let rect = canvas.getBoundingClientRect();
+                x = Math.floor((eOrX.clientX - rect.left) / m_cellSize);
+                y = Math.floor((eOrX.clientY - rect.top) / m_cellSize);
+            }
+
+            if (x >= 0 && x < m_cols && y >= 0 && y < m_rows) {
+                let cell = m_grid[x][y];
+                if (!cell.revealed) {
+                    cell.flagged = !cell.flagged;
+                    m_draw();
+                }
+            }
+        }
+
+        function m_reveal(x, y) {
+            if (x < 0 || x >= m_cols || y < 0 || y >= m_rows) return;
+            let cell = m_grid[x][y];
+            if (cell.revealed || cell.flagged) return;
+
+            cell.revealed = true;
+
+            if (cell.mine) {
+                m_gameOver = true;
+                scoreEl.innerText = "БАБАХ! 💥";
+                m_revealAll();
+                m_draw();
+                return;
+            }
+
+            if (cell.neighborCount === 0) {
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        m_reveal(x + i, y + j);
+                    }
+                }
+            }
+            m_draw();
+            m_checkWin();
+        }
+
+        function m_revealAll() {
+            for (let i = 0; i < m_cols; i++) {
+                for (let j = 0; j < m_rows; j++) {
+                    m_grid[i][j].revealed = true;
+                }
+            }
+        }
+
+        function m_checkWin() {
+            let correctFlags = 0;
+            let unrevealedSafe = 0;
+            for (let i = 0; i < m_cols; i++) {
+                for (let j = 0; j < m_rows; j++) {
+                    let c = m_grid[i][j];
+                    if (c.flagged && c.mine) correctFlags++;
+                    if (!c.revealed && !c.mine) unrevealedSafe++;
+                }
+            }
+            // Победа если все безопасные клетки открыты
+            if (unrevealedSafe === 0) {
+                scoreEl.innerText = "ПОБЕДА! 🏆";
+                m_gameOver = true;
+            }
+        }
+
+    </script>
+</body>
+</html>
