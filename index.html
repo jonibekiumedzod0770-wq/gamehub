@@ -5,203 +5,47 @@
     <title>GameHub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #1a1a2e;
-            color: white;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow: hidden;
-            touch-action: none;
-        }
-
-        header {
-            background-color: #16213e;
-            padding: 10px;
-            text-align: center;
-            width: 100%;
-            box-sizing: border-box;
-            flex-shrink: 0;
-        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a2e; color: white; margin: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; overflow: hidden; touch-action: none; }
+        header { background-color: #16213e; padding: 10px; text-align: center; width: 100%; box-sizing: border-box; flex-shrink: 0; }
         h1 { margin: 0; color: #0ff; font-size: 20px; }
         p { color: #aaa; margin: 5px 0 0; font-size: 12px; }
-
-        .container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            padding: 10px;
-            gap: 15px;
-            overflow-y: auto;
-            flex-grow: 1;
-            align-content: flex-start;
-        }
-
-        .game-card {
-            background: #16213e;
-            width: 45%;
-            min-width: 140px;
-            border-radius: 10px;
-            text-align: center;
-            transition: transform 0.2s;
-            cursor: pointer;
-            border: 2px solid #333;
-            padding-bottom: 10px;
-        }
+        .container { display: flex; flex-wrap: wrap; justify-content: center; padding: 10px; gap: 15px; overflow-y: auto; flex-grow: 1; align-content: flex-start; }
+        .game-card { background: #16213e; width: 45%; min-width: 140px; border-radius: 10px; text-align: center; transition: transform 0.2s; cursor: pointer; border: 2px solid #333; padding-bottom: 10px; }
         .game-card:active { transform: scale(0.95); border-color: #e94560; }
-
-        .card-img {
-            width: 100%;
-            height: 80px;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-        }
+        .card-img { width: 100%; height: 80px; background: #000; display: flex; align-items: center; justify-content: center; font-size: 40px; }
         .game-card h3 { margin: 8px 0; font-size: 16px; }
-
-        #game-screen {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #111;
-            z-index: 100;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .score-board {
-            font-size: 20px;
-            margin-top: 10px;
-            color: #0ff;
-            height: 30px;
-            text-shadow: 0 0 5px #0ff;
-            text-align: center;
-        }
-
-        .game-area {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        canvas {
-            background-color: #000;
-            display: block;
-            border: 2px solid #333;
-            max-width: 100%;
-            max-height: 100%;
-            touch-action: none;
-        }
-
-        .controls-container {
-            width: 100%;
-            background: #16213e;
-            padding: 10px 0;
-            padding-bottom: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-        
-        .ctrl-btn {
-            background: #0f3460;
-            color: white;
-            border: 2px solid #e94560;
-            font-size: 24px;
-            font-weight: bold;
-            border-radius: 10px;
-            cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+        #game-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; z-index: 100; flex-direction: column; align-items: center; justify-content: space-between; }
+        .score-board { font-size: 20px; margin-top: 10px; color: #0ff; height: 30px; text-shadow: 0 0 5px #0ff; text-align: center; }
+        .game-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; overflow: hidden; }
+        canvas { background-color: #000; display: block; border: 2px solid #333; max-width: 100%; max-height: 100%; touch-action: none; }
+        .controls-container { width: 100%; background: #16213e; padding: 10px 0; padding-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-shrink: 0; }
+        .ctrl-btn { background: #0f3460; color: white; border: 2px solid #e94560; font-size: 24px; font-weight: bold; border-radius: 10px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
         .ctrl-btn:active { background: #e94560; transform: scale(0.95); }
-
-        .dpad-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 60px);
-            grid-template-rows: repeat(2, 60px);
-            gap: 5px;
-        }
-        .dpad-btn {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .ms-controls {
-            display: flex;
-            width: 90%;
-            gap: 10px;
-        }
-        .ms-btn {
-            flex-grow: 1;
-            height: 60px;
-            font-size: 18px !important;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 30px;
-            color: #fff;
-            cursor: pointer;
-            z-index: 101;
-            background: rgba(0,0,0,0.5);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            text-align: center;
-            line-height: 35px;
-        }
+        .dpad-grid { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(2, 60px); gap: 5px; }
+        .dpad-btn { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; }
+        .ms-controls { display: flex; width: 90%; gap: 10px; }
+        .ms-btn { flex-grow: 1; height: 60px; font-size: 18px !important; }
+        .action-btn { width: 80%; height: 70px; font-size: 24px !important; }
+        .close-btn { position: absolute; top: 10px; right: 10px; font-size: 30px; color: #fff; cursor: pointer; z-index: 101; background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px; text-align: center; line-height: 35px; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>GameHub</h1>
-        <p>Игры для телефона</p>
-    </header>
+    <header><h1>GameHub</h1><p>Лучшие игры бесплатно</p></header>
 
     <div class="container" id="menu">
-        <div class="game-card" onclick="openGame('tetris')">
-            <div class="card-img">🧱</div>
-            <h3>Тетрис</h3>
-        </div>
-        <div class="game-card" onclick="openGame('snake')">
-            <div class="card-img">🐍</div>
-            <h3>Змейка</h3>
-        </div>
-        <div class="game-card" onclick="openGame('racing')">
-            <div class="card-img">🏎️</div>
-            <h3>Гонки</h3>
-        </div>
-        <div class="game-card" onclick="openGame('minesweeper')">
-            <div class="card-img">💣</div>
-            <h3>Сапёр</h3>
-        </div>
+        <div class="game-card" onclick="openGame('tetris')"><div class="card-img">🧱</div><h3>Тетрис</h3></div>
+        <div class="game-card" onclick="openGame('snake')"><div class="card-img">🐍</div><h3>Змейка</h3></div>
+        <div class="game-card" onclick="openGame('racing')"><div class="card-img">🏎️</div><h3>Гонки</h3></div>
+        <div class="game-card" onclick="openGame('minesweeper')"><div class="card-img">💣</div><h3>Сапёр</h3></div>
+        <div class="game-card" onclick="openGame('flappy')"><div class="card-img">🐦</div><h3>Flappy Bird</h3></div>
+        <div class="game-card" onclick="openGame('arkanoid')"><div class="card-img">🧱</div><h3>Арканоид</h3></div>
     </div>
 
     <div id="game-screen">
         <div class="close-btn" onclick="closeGame()">&times;</div>
         <div class="score-board" id="score-display">Счет: 0</div>
-        
-        <div class="game-area">
-            <canvas id="game-canvas"></canvas>
-        </div>
-
+        <div class="game-area"><canvas id="game-canvas"></canvas></div>
         <div class="controls-container" id="controls-panel"></div>
     </div>
 
@@ -235,11 +79,15 @@
             gameScreen.style.display = 'flex';
             currentGame = gameName;
             controlsPanel.innerHTML = '';
+            cancelAnimationFrame(animationId);
+            clearInterval(gameInterval);
 
             if (gameName === 'tetris') startTetris();
             if (gameName === 'snake') startSnake();
             if (gameName === 'racing') startRacing();
             if (gameName === 'minesweeper') startMinesweeper();
+            if (gameName === 'flappy') startFlappy();
+            if (gameName === 'arkanoid') startArkanoid();
         }
 
         function closeGame() {
@@ -268,35 +116,24 @@
             if (currentGame === 'tetris') tetrisKeyDown(e);
             if (currentGame === 'snake') snakeKeyDown(e);
             if (currentGame === 'racing') racingKeyDown(e);
+            if (currentGame === 'flappy') flappyKeyDown(e);
+            if (currentGame === 'arkanoid') arkanoidKeyDown(e);
         });
 
         /* --- ТЕТРИС --- */
         let t_arena, t_player, t_dropCounter, t_dropInterval, t_lastTime;
-        
         function startTetris() {
-            resizeCanvas(240, 400);
-            ctx.scale(20, 20);
+            resizeCanvas(240, 400); ctx.scale(20, 20);
             t_arena = createMatrix(12, 20);
             t_player = { pos: {x:0, y:0}, matrix: null, score: 0 };
             t_dropCounter = 0; t_dropInterval = 1000; t_lastTime = 0;
             t_playerReset(); t_updateScore(); t_update();
-
-            createButtons(`
-                <div class="dpad-grid">
-                    <div></div>
-                    <button class="ctrl-btn dpad-btn" id="btn-up">▲</button>
-                    <div></div>
-                    <button class="ctrl-btn dpad-btn" id="btn-left">◀</button>
-                    <button class="ctrl-btn dpad-btn" id="btn-down">▼</button>
-                    <button class="ctrl-btn dpad-btn" id="btn-right">▶</button>
-                </div>
-            `);
+            createButtons(`<div class="dpad-grid"><div></div><button class="ctrl-btn dpad-btn" id="btn-up">▲</button><div></div><button class="ctrl-btn dpad-btn" id="btn-left">◀</button><button class="ctrl-btn dpad-btn" id="btn-down">▼</button><button class="ctrl-btn dpad-btn" id="btn-right">▶</button></div>`);
             document.getElementById('btn-up').onclick = () => t_playerRotate();
             document.getElementById('btn-down').onclick = () => t_playerDrop();
             document.getElementById('btn-left').onclick = () => t_playerMove(-1);
             document.getElementById('btn-right').onclick = () => t_playerMove(1);
         }
-        
         function createMatrix(w, h) { return Array.from({length: h}, () => Array(w).fill(0)); }
         function t_createPiece(type) {
             if (type === 'I') return [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]];
@@ -324,26 +161,9 @@
         /* --- ЗМЕЙКА --- */
         let s_score, s_snake, s_food, s_dx, s_dy, s_gridSize, s_tileCount;
         function startSnake() {
-            resizeCanvas(400, 400);
-            s_score = 0; s_gridSize = 20; s_tileCount = 20;
-            s_snake = [{x: 10, y: 10}]; s_food = {x: 15, y: 15}; s_dx = 0; s_dy = 0;
-            scoreEl.innerText = 0;
-            clearInterval(gameInterval); gameInterval = setInterval(s_update, 100); s_draw();
-
-            createButtons(`
-                <div class="dpad-grid">
-                    <div></div>
-                    <button class="ctrl-btn dpad-btn" id="btn-up">▲</button>
-                    <div></div>
-                    <button class="ctrl-btn dpad-btn" id="btn-left">◀</button>
-                    <button class="ctrl-btn dpad-btn" id="btn-down">▼</button>
-                    <button class="ctrl-btn dpad-btn" id="btn-right">▶</button>
-                </div>
-            `);
-            document.getElementById('btn-up').onclick = () => s_setDirection(0, -1);
-            document.getElementById('btn-down').onclick = () => s_setDirection(0, 1);
-            document.getElementById('btn-left').onclick = () => s_setDirection(-1, 0);
-            document.getElementById('btn-right').onclick = () => s_setDirection(1, 0);
+            resizeCanvas(400, 400); s_score = 0; s_gridSize = 20; s_tileCount = 20; s_snake = [{x: 10, y: 10}]; s_food = {x: 15, y: 15}; s_dx = 0; s_dy = 0; scoreEl.innerText = 0; clearInterval(gameInterval); gameInterval = setInterval(s_update, 100); s_draw();
+            createButtons(`<div class="dpad-grid"><div></div><button class="ctrl-btn dpad-btn" id="btn-up">▲</button><div></div><button class="ctrl-btn dpad-btn" id="btn-left">◀</button><button class="ctrl-btn dpad-btn" id="btn-down">▼</button><button class="ctrl-btn dpad-btn" id="btn-right">▶</button></div>`);
+            document.getElementById('btn-up').onclick = () => s_setDirection(0, -1); document.getElementById('btn-down').onclick = () => s_setDirection(0, 1); document.getElementById('btn-left').onclick = () => s_setDirection(-1, 0); document.getElementById('btn-right').onclick = () => s_setDirection(1, 0);
         }
         function s_setDirection(x, y) { if (x === -s_dx && s_dx !== 0) return; if (y === -s_dy && s_dy !== 0) return; if (s_dx === 0 && s_dy === 0) { s_dx = x; s_dy = y; } else { s_dx = x; s_dy = y; } }
         function s_update() { if (currentGame !== 'snake') return; if (s_dx === 0 && s_dy === 0) { s_draw(); return; } const head = {x: s_snake[0].x + s_dx, y: s_snake[0].y + s_dy}; if (head.x < 0 || head.x >= s_tileCount || head.y < 0 || head.y >= s_tileCount) { s_gameOver(); return; } for (let part of s_snake) { if (part.x === head.x && part.y === head.y) { s_gameOver(); return; } } s_snake.unshift(head); if (head.x === s_food.x && head.y === s_food.y) { s_score++; scoreEl.innerText = s_score; s_placeFood(); } else { s_snake.pop(); } s_draw(); }
@@ -355,20 +175,9 @@
         /* --- ГОНОК --- */
         let r_player, r_enemies, r_score, r_speed, r_roadLine, r_isGameOver;
         function startRacing() {
-            resizeCanvas(400, 400);
-            r_player = { x: 175, y: 350, width: 50, height: 80 }; r_enemies = []; r_score = 0; r_speed = 5; r_roadLine = 0; r_isGameOver = false; scoreEl.innerText = 0; r_spawnEnemy();
-            
-            createButtons(`
-                <div class="dpad-grid">
-                    <div></div><div></div><div></div>
-                    <button class="ctrl-btn dpad-btn" id="btn-left">◀</button>
-                    <div></div>
-                    <button class="ctrl-btn dpad-btn" id="btn-right">▶</button>
-                </div>
-            `);
-            document.getElementById('btn-left').onclick = () => r_movePlayer(-20);
-            document.getElementById('btn-right').onclick = () => r_movePlayer(20);
-            r_update();
+            resizeCanvas(400, 400); r_player = { x: 175, y: 350, width: 50, height: 80 }; r_enemies = []; r_score = 0; r_speed = 5; r_roadLine = 0; r_isGameOver = false; scoreEl.innerText = 0; r_spawnEnemy();
+            createButtons(`<div class="dpad-grid"><div></div><div></div><div></div><button class="ctrl-btn dpad-btn" id="btn-left">◀</button><div></div><button class="ctrl-btn dpad-btn" id="btn-right">▶</button></div>`);
+            document.getElementById('btn-left').onclick = () => r_movePlayer(-20); document.getElementById('btn-right').onclick = () => r_movePlayer(20); r_update();
         }
         function r_movePlayer(dir) { r_player.x += dir; if (r_player.x < 50) r_player.x = 50; if (r_player.x + r_player.width > 350) r_player.x = 350 - r_player.width; }
         function r_spawnEnemy() { let x = Math.random() * (300 - 50) + 50; r_enemies.push({ x: x, y: -100, width: 50, height: 80 }); }
@@ -377,66 +186,259 @@
         function r_gameOver() { r_isGameOver = true; ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = 'white'; ctx.font = '40px Arial'; ctx.textAlign = 'center'; ctx.fillText('АВАРИЯ!', canvas.width/2, canvas.height/2); ctx.font = '20px Arial'; ctx.fillText('Нажми кнопку', canvas.width/2, canvas.height/2 + 40); }
         function racingKeyDown(e) { if (r_isGameOver) { r_enemies = []; r_score = 0; r_speed = 5; r_isGameOver = false; scoreEl.innerText = 0; r_update(); return; } if (e.keyCode === 37) r_movePlayer(-20); if (e.keyCode === 39) r_movePlayer(20); }
 
-        /* --- САПЁР (ИСПРАВЛЕНО) --- */
+        /* --- САПЁР --- */
         let m_grid, m_cols, m_rows, m_cellSize, m_minesCount, m_gameOver, m_flagMode;
         const m_numbers = ['blue', 'green', 'red', 'darkblue', 'brown', 'cyan', 'black', 'grey'];
         function startMinesweeper() {
-            m_cols = 10; m_rows = 10; m_cellSize = 30;
-            resizeCanvas(m_cols * m_cellSize, m_rows * m_cellSize);
-            m_minesCount = 15; m_gameOver = false; m_flagMode = false;
-            m_createGrid();
-            
-            // Обработка клика
-            canvas.onmousedown = (e) => m_handleClick(e);
-            canvas.ontouchstart = (e) => {
-                e.preventDefault(); // Предотвращаем скролл
-                m_handleClick(e.touches[0]); // Передаем координаты касания
-            };
-
-            createButtons(`
-                <div class="ms-controls">
-                    <button class="ctrl-btn ms-btn" id="btn-flag">🚩 Флажок</button>
-                    <button class="ctrl-btn ms-btn" id="btn-restart">🔄 Заново</button>
-                </div>
-            `);
-            
-            document.getElementById('btn-flag').onclick = () => {
-                m_flagMode = !m_flagMode;
-                document.getElementById('btn-flag').style.background = m_flagMode ? '#e94560' : '#0f3460';
-                document.getElementById('btn-flag').innerText = m_flagMode ? "🚩 Режим: Флаг" : "🚩 Флажок";
-            };
-            document.getElementById('btn-restart').onclick = startMinesweeper;
+            m_cols = 10; m_rows = 10; m_cellSize = 30; resizeCanvas(m_cols * m_cellSize, m_rows * m_cellSize); m_minesCount = 15; m_gameOver = false; m_flagMode = false; m_createGrid();
+            canvas.onmousedown = (e) => m_handleClick(e); canvas.ontouchstart = (e) => { e.preventDefault(); m_handleClick(e.touches[0]); };
+            createButtons(`<div class="ms-controls"><button class="ctrl-btn ms-btn" id="btn-flag">🚩 Флажок</button><button class="ctrl-btn ms-btn" id="btn-restart">🔄 Заново</button></div>`);
+            document.getElementById('btn-flag').onclick = () => { m_flagMode = !m_flagMode; document.getElementById('btn-flag').style.background = m_flagMode ? '#e94560' : '#0f3460'; document.getElementById('btn-flag').innerText = m_flagMode ? "🚩 Режим: Флаг" : "🚩 Флажок"; }; document.getElementById('btn-restart').onclick = startMinesweeper;
         }
         function m_createGrid() { m_grid = []; for (let i = 0; i < m_cols; i++) { m_grid[i] = []; for (let j = 0; j < m_rows; j++) { m_grid[i][j] = { mine: false, revealed: false, flagged: false, neighborCount: 0 }; } } let minesPlaced = 0; while (minesPlaced < m_minesCount) { let x = Math.floor(Math.random() * m_cols); let y = Math.floor(Math.random() * m_rows); if (!m_grid[x][y].mine) { m_grid[x][y].mine = true; minesPlaced++; } } for (let i = 0; i < m_cols; i++) { for (let j = 0; j < m_rows; j++) { if (!m_grid[i][j].mine) { m_grid[i][j].neighborCount = m_countMines(i, j); } } } m_draw(); }
         function m_countMines(x, y) { let count = 0; for (let i = -1; i <= 1; i++) { for (let j = -1; j <= 1; j++) { let ni = x + i, nj = y + j; if (ni >= 0 && ni < m_cols && nj >= 0 && nj < m_rows) { if (m_grid[ni][nj].mine) count++; } } } return count; }
         function m_draw() { ctx.clearRect(0, 0, canvas.width, canvas.height); for (let i = 0; i < m_cols; i++) { for (let j = 0; j < m_rows; j++) { let cell = m_grid[i][j]; let x = i * m_cellSize; let y = j * m_cellSize; if (cell.revealed) { ctx.fillStyle = cell.mine ? '#e74c3c' : '#ecf0f1'; } else { ctx.fillStyle = cell.flagged ? '#f1c40f' : '#bdc3c7'; } ctx.fillRect(x + 1, y + 1, m_cellSize - 2, m_cellSize - 2); if (cell.revealed) { if (cell.mine) { ctx.fillStyle = 'black'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center'; ctx.fillText('💣', x + m_cellSize/2, y + m_cellSize/2 + 5); } else if (cell.neighborCount > 0) { ctx.fillStyle = m_numbers[cell.neighborCount - 1]; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center'; ctx.fillText(cell.neighborCount, x + m_cellSize/2, y + m_cellSize/2 + 5); } } else if (cell.flagged) { ctx.fillStyle = 'red'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center'; ctx.fillText('🚩', x + m_cellSize/2, y + m_cellSize/2 + 5); } } } }
-        
-        // ИСПРАВЛЕННАЯ ФУНКЦИЯ КЛИКА
-        function m_handleClick(e) { 
-            if (m_gameOver) return;
-            let rect = canvas.getBoundingClientRect();
-            // Вычисляем масштаб для касания
-            let scaleX = canvas.width / rect.width;
-            let scaleY = canvas.height / rect.height;
-            
-            // Вычисляем координаты сетки
-            let x = Math.floor((e.clientX - rect.left) * scaleX / m_cellSize);
-            let y = Math.floor((e.clientY - rect.top) * scaleY / m_cellSize);
-            
-            // Защита от выхода за границы массива
-            if (x < 0 || x >= m_cols || y < 0 || y >= m_rows) return;
-
-            if (m_flagMode) {
-                m_toggleFlag(x, y);
-            } else {
-                m_reveal(x, y);
-            }
-        }
-        
+        function m_handleClick(e) { if (m_gameOver) return; let rect = canvas.getBoundingClientRect(); let scaleX = canvas.width / rect.width; let scaleY = canvas.height / rect.height; let x = Math.floor((e.clientX - rect.left) * scaleX / m_cellSize); let y = Math.floor((e.clientY - rect.top) * scaleY / m_cellSize); if (x < 0 || x >= m_cols || y < 0 || y >= m_rows) return; if (m_flagMode) { m_toggleFlag(x, y); } else { m_reveal(x, y); } }
         function m_toggleFlag(x, y) { if (!m_grid[x][y].revealed) { m_grid[x][y].flagged = !m_grid[x][y].flagged; m_draw(); } }
         function m_reveal(x, y) { if (x < 0 || x >= m_cols || y < 0 || y >= m_rows) return; let cell = m_grid[x][y]; if (cell.revealed || cell.flagged) return; cell.revealed = true; if (cell.mine) { m_gameOver = true; scoreEl.innerText = "БАБАХ! 💥"; m_revealAll(); m_draw(); return; } if (cell.neighborCount === 0) { for (let i = -1; i <= 1; i++) { for (let j = -1; j <= 1; j++) { m_reveal(x + i, y + j); } } } m_draw(); m_checkWin(); }
         function m_revealAll() { for (let i = 0; i < m_cols; i++) { for (let j = 0; j < m_rows; j++) { m_grid[i][j].revealed = true; } } }
         function m_checkWin() { let unrevealedSafe = 0; for (let i = 0; i < m_cols; i++) { for (let j = 0; j < m_rows; j++) { let c = m_grid[i][j]; if (!c.revealed && !c.mine) unrevealedSafe++; } } if (unrevealedSafe === 0) { scoreEl.innerText = "ПОБЕДА! 🏆"; m_gameOver = true; } }
+
+        /* --- FLAPPY BIRD (ИСПРАВЛЕНО) --- */
+        let f_bird, f_pipes, f_score, f_isGameOver, f_velocity;
+        const f_gravity = 0.25; // Уменьшил гравитацию
+        const f_jump = -5;      // Уменьшил прыжок
+        const f_pipeSpeed = 2;
+
+        function startFlappy() {
+            resizeCanvas(400, 600);
+            f_bird = { x: 80, y: 300, size: 15 };
+            f_pipes = [];
+            f_score = 0;
+            f_isGameOver = false;
+            f_velocity = 0;
+            scoreEl.innerText = 0;
+
+            createButtons(`<button class="ctrl-btn action-btn" id="btn-flap">ВЗЛЕТАТЬ 🕊️</button>`);
+            document.getElementById('btn-flap').onclick = () => f_flap();
+            canvas.onclick = f_flap;
+            f_update();
+        }
+
+        function f_flap() {
+            if (f_isGameOver) {
+                // Рестарт
+                cancelAnimationFrame(animationId); // Останавливаем старый цикл
+                startFlappy(); // Перезапускаем
+            } else {
+                f_velocity = f_jump;
+            }
+        }
+
+        function f_update() {
+            if (currentGame !== 'flappy') return;
+            
+            // Физика
+            f_velocity += f_gravity;
+            f_bird.y += f_velocity;
+
+            // Отрисовка фона
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (!f_isGameOver) {
+                // Генерация труб
+                if (Math.random() < 0.01) { // Реже генерируем
+                    let gap = 150;
+                    let h = Math.random() * (canvas.height - gap - 100) + 50;
+                    f_pipes.push({ x: canvas.width, h: h, gap: gap, passed: false });
+                }
+
+                // Трубы
+                ctx.fillStyle = '#2ecc71';
+                for (let i = 0; i < f_pipes.length; i++) {
+                    let pipe = f_pipes[i];
+                    pipe.x -= f_pipeSpeed;
+
+                    // Верхняя труба
+                    ctx.fillRect(pipe.x, 0, 50, pipe.h);
+                    // Нижняя труба
+                    ctx.fillRect(pipe.x, pipe.h + pipe.gap, 50, canvas.height);
+
+                    // Столкновение
+                    if (f_bird.x + f_bird.size > pipe.x && f_bird.x - f_bird.size < pipe.x + 50) {
+                        if (f_bird.y - f_bird.size < pipe.h || f_bird.y + f_bird.size > pipe.h + pipe.gap) {
+                            f_gameOverFlappy();
+                        }
+                    }
+
+                    // Счет
+                    if (pipe.x + 50 < f_bird.x && !pipe.passed) {
+                        pipe.passed = true;
+                        f_score++;
+                        scoreEl.innerText = f_score;
+                    }
+                }
+                
+                // Удаление старых труб
+                if (f_pipes.length && f_pipes[0].x < -50) f_pipes.shift();
+
+                // Пол и потолок
+                if (f_bird.y + f_bird.size > canvas.height || f_bird.y - f_bird.size < 0) {
+                    f_gameOverFlappy();
+                }
+            }
+
+            // Птичка
+            ctx.fillStyle = '#f1c40f';
+            ctx.beginPath();
+            ctx.arc(f_bird.x, f_bird.y, f_bird.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Game Over экран
+            if (f_isGameOver) {
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.font = '40px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
+                ctx.font = '20px Arial';
+                ctx.fillText('Нажми, чтобы лететь', canvas.width/2, canvas.height/2 + 40);
+                return; // Остановка цикла
+            }
+
+            animationId = requestAnimationFrame(f_update);
+        }
+
+        function f_gameOverFlappy() {
+            f_isGameOver = true;
+        }
+        
+        function flappyKeyDown(e) { if (e.keyCode === 32) f_flap(); }
+
+        /* --- ARKANOID (ИСПРАВЛЕНО) --- */
+        let a_paddle, a_ball, a_bricks, a_score, a_isGameOver;
+        
+        function startArkanoid() {
+            resizeCanvas(480, 600);
+            a_paddle = { x: 190, y: 570, w: 100, h: 15 };
+            a_ball = { x: 240, y: 300, r: 8, dx: 4, dy: -4 };
+            a_bricks = [];
+            a_score = 0;
+            a_isGameOver = false;
+            scoreEl.innerText = 0;
+
+            for (let i = 0; i < 8; i++) {
+                for (let j = 0; j < 5; j++) {
+                    a_bricks.push({ x: 10 + i * 58, y: 50 + j * 25, w: 50, h: 20, alive: true });
+                }
+            }
+
+            createButtons(`<div class="dpad-grid" style="grid-template-columns: repeat(2, 80px);"><button class="ctrl-btn dpad-btn" style="width:80px; height:60px;" id="btn-a-left">◀◀</button><button class="ctrl-btn dpad-btn" style="width:80px; height:60px;" id="btn-a-right">▶▶</button></div>`);
+            
+            document.getElementById('btn-a-left').onclick = () => a_movePaddle(-30);
+            document.getElementById('btn-a-right').onclick = () => a_movePaddle(30);
+
+            a_update();
+        }
+
+        function a_movePaddle(dir) {
+            a_paddle.x += dir;
+            if (a_paddle.x < 0) a_paddle.x = 0;
+            if (a_paddle.x + a_paddle.w > canvas.width) a_paddle.x = canvas.width - a_paddle.w;
+        }
+
+        function a_update() {
+            if (currentGame !== 'arkanoid') return;
+            if (a_isGameOver) return;
+
+            // Движение мяча
+            a_ball.x += a_ball.dx;
+            a_ball.y += a_ball.dy;
+
+            // Отскоки от стен
+            if (a_ball.x > canvas.width - a_ball.r || a_ball.x < a_ball.r) a_ball.dx *= -1;
+            if (a_ball.y < a_ball.r) a_ball.dy *= -1;
+
+            // Отскок от платформы
+            if (a_ball.y + a_ball.r > a_paddle.y && 
+                a_ball.x > a_paddle.x && 
+                a_ball.x < a_paddle.x + a_paddle.w) {
+                a_ball.dy = -Math.abs(a_ball.dy); // Всегда вверх
+                // Угол отскока зависит от места удара
+                let hitPos = (a_ball.x - a_paddle.x) / a_paddle.w;
+                a_ball.dx = 8 * (hitPos - 0.5); 
+            }
+
+            // Падение
+            if (a_ball.y > canvas.height) {
+                a_isGameOver = true;
+            }
+
+            // Отрисовка
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Кирпичи
+            let allBroken = true;
+            a_bricks.forEach(brick => {
+                if (!brick.alive) return;
+                allBroken = false;
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(brick.x, brick.y, brick.w, brick.h);
+                
+                // Столкновение с кирпичом
+                if (a_ball.x + a_ball.r > brick.x && a_ball.x - a_ball.r < brick.x + brick.w &&
+                    a_ball.y + a_ball.r > brick.y && a_ball.y - a_ball.r < brick.y + brick.h) {
+                    brick.alive = false;
+                    a_ball.dy *= -1;
+                    a_score++;
+                    scoreEl.innerText = a_score;
+                }
+            });
+
+            // Платформа
+            ctx.fillStyle = '#3498db';
+            ctx.fillRect(a_paddle.x, a_paddle.y, a_paddle.w, a_paddle.h);
+
+            // Мяч
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(a_ball.x, a_ball.y, a_ball.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Победа
+            if (allBroken) {
+                 a_isGameOver = true;
+                 ctx.fillStyle = 'rgba(0,255,0,0.5)';
+                 ctx.fillRect(0,0,canvas.width, canvas.height);
+                 ctx.fillStyle = 'white';
+                 ctx.font = '40px Arial';
+                 ctx.textAlign = 'center';
+                 ctx.fillText('ПОБЕДА!', canvas.width/2, canvas.height/2);
+                 return;
+            }
+
+            if (a_isGameOver) {
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.fillRect(0,0,canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.font = '40px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
+                ctx.font = '20px Arial';
+                ctx.fillText('Нажми кнопку', canvas.width/2, canvas.height/2 + 40);
+                return;
+            }
+
+            animationId = requestAnimationFrame(a_update);
+        }
+        
+        function arkanoidKeyDown(e) {
+            if (e.keyCode === 37) a_movePaddle(-30);
+            if (e.keyCode === 39) a_movePaddle(30);
+        }
 
     </script>
 </body>
