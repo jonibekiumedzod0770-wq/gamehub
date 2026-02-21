@@ -5,7 +5,7 @@
     <title>GameHub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a2e; color: white; margin: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; overflow: hidden; touch-action: none; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a2e; color: white; margin: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; overflow: hidden; touch-action: none; user-select: none; }
         header { background-color: #16213e; padding: 10px; text-align: center; width: 100%; box-sizing: border-box; flex-shrink: 0; }
         h1 { margin: 0; color: #0ff; font-size: 20px; }
         p { color: #aaa; margin: 5px 0 0; font-size: 12px; }
@@ -40,6 +40,7 @@
         <div class="game-card" onclick="openGame('minesweeper')"><div class="card-img">💣</div><h3>Сапёр</h3></div>
         <div class="game-card" onclick="openGame('flappy')"><div class="card-img">🐦</div><h3>Flappy Bird</h3></div>
         <div class="game-card" onclick="openGame('arkanoid')"><div class="card-img">🧱</div><h3>Арканоид</h3></div>
+        <div class="game-card" onclick="openGame('blockblast')"><div class="card-img">🟥</div><h3>Block Blast</h3></div>
     </div>
 
     <div id="game-screen">
@@ -82,12 +83,18 @@
             cancelAnimationFrame(animationId);
             clearInterval(gameInterval);
 
+            canvas.onmousedown = null; canvas.ontouchstart = null;
+            canvas.onmousemove = null; canvas.ontouchmove = null;
+            canvas.onmouseup = null; canvas.ontouchend = null;
+            canvas.onclick = null;
+
             if (gameName === 'tetris') startTetris();
             if (gameName === 'snake') startSnake();
             if (gameName === 'racing') startRacing();
             if (gameName === 'minesweeper') startMinesweeper();
             if (gameName === 'flappy') startFlappy();
             if (gameName === 'arkanoid') startArkanoid();
+            if (gameName === 'blockblast') startBlockBlast();
         }
 
         function closeGame() {
@@ -96,18 +103,13 @@
             cancelAnimationFrame(animationId);
             clearInterval(gameInterval);
             currentGame = null;
-            canvas.onmousedown = null;
-            canvas.ontouchstart = null;
         }
         
         function createButtons(html) {
             controlsPanel.innerHTML = html;
             const btns = controlsPanel.querySelectorAll('.ctrl-btn');
             btns.forEach(btn => {
-                btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    if(btn.onclick) btn.onclick();
-                }, {passive: false});
+                btn.addEventListener('touchstart', (e) => { e.preventDefault(); if(btn.onclick) btn.onclick(); }, {passive: false});
             });
         }
 
@@ -200,245 +202,348 @@
         function m_draw() { ctx.clearRect(0, 0, canvas.width, canvas.height); for (let i = 0; i < m_cols; i++) { for (let j = 0; j < m_rows; j++) { let cell = m_grid[i][j]; let x = i * m_cellSize; let y = j * m_cellSize; if (cell.revealed) { ctx.fillStyle = cell.mine ? '#e74c3c' : '#ecf0f1'; } else { ctx.fillStyle = cell.flagged ? '#f1c40f' : '#bdc3c7'; } ctx.fillRect(x + 1, y + 1, m_cellSize - 2, m_cellSize - 2); if (cell.revealed) { if (cell.mine) { ctx.fillStyle = 'black'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center'; ctx.fillText('💣', x + m_cellSize/2, y + m_cellSize/2 + 5); } else if (cell.neighborCount > 0) { ctx.fillStyle = m_numbers[cell.neighborCount - 1]; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center'; ctx.fillText(cell.neighborCount, x + m_cellSize/2, y + m_cellSize/2 + 5); } } else if (cell.flagged) { ctx.fillStyle = 'red'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center'; ctx.fillText('🚩', x + m_cellSize/2, y + m_cellSize/2 + 5); } } } }
         function m_handleClick(e) { if (m_gameOver) return; let rect = canvas.getBoundingClientRect(); let scaleX = canvas.width / rect.width; let scaleY = canvas.height / rect.height; let x = Math.floor((e.clientX - rect.left) * scaleX / m_cellSize); let y = Math.floor((e.clientY - rect.top) * scaleY / m_cellSize); if (x < 0 || x >= m_cols || y < 0 || y >= m_rows) return; if (m_flagMode) { m_toggleFlag(x, y); } else { m_reveal(x, y); } }
         function m_toggleFlag(x, y) { if (!m_grid[x][y].revealed) { m_grid[x][y].flagged = !m_grid[x][y].flagged; m_draw(); } }
-        function m_reveal(x, y) { if (x < 0 || x >= m_cols || y < 0 || y >= m_rows) return; let cell = m_grid[x][y]; if (cell.revealed || cell.flagged) return; cell.revealed = true; if (cell.mine) { m_gameOver = true; scoreEl.innerText = "БАБАХ! 💥"; m_revealAll(); m_draw(); return; } if (cell.neighborCount === 0) { for (let i = -1; i <= 1; i++) { for (let j = -1; j <= 1; j++) { m_reveal(x + i, y + j); } } } m_draw(); m_checkWin(); }
+        function m_reveal(x, y) { if (x < 0 || x >= m_cols || y < 0 || y >= m_rows) return; let cell = m_grid[x][y]; if (cell.revealed || cell.flagged) return; cell.revealed = true; if (cell.mine) { m_gameOver = true; scoreEl.innerText = "БАБАХ! 💥"; m_revealAll(); m_draw(); return; } if (cell.neighborCount === 0) { for (let i = -1; i <= 1; i++) { for (let j = -1; j <= 1; j++) { m_reveal(x + i, y + j); } } m_draw(); m_checkWin(); } }
         function m_revealAll() { for (let i = 0; i < m_cols; i++) { for (let j = 0; j < m_rows; j++) { m_grid[i][j].revealed = true; } } }
         function m_checkWin() { let unrevealedSafe = 0; for (let i = 0; i < m_cols; i++) { for (let j = 0; j < m_rows; j++) { let c = m_grid[i][j]; if (!c.revealed && !c.mine) unrevealedSafe++; } } if (unrevealedSafe === 0) { scoreEl.innerText = "ПОБЕДА! 🏆"; m_gameOver = true; } }
 
-        /* --- FLAPPY BIRD (ИСПРАВЛЕНО) --- */
+        /* --- FLAPPY BIRD --- */
         let f_bird, f_pipes, f_score, f_isGameOver, f_velocity;
-        const f_gravity = 0.25; // Уменьшил гравитацию
-        const f_jump = -5;      // Уменьшил прыжок
-        const f_pipeSpeed = 2;
-
+        const f_gravity = 0.25; const f_jump = -5; const f_pipeSpeed = 2;
         function startFlappy() {
-            resizeCanvas(400, 600);
-            f_bird = { x: 80, y: 300, size: 15 };
-            f_pipes = [];
-            f_score = 0;
-            f_isGameOver = false;
-            f_velocity = 0;
-            scoreEl.innerText = 0;
-
+            resizeCanvas(400, 600); f_bird = { x: 80, y: 300, size: 15 }; f_pipes = []; f_score = 0; f_isGameOver = false; f_velocity = 0; scoreEl.innerText = 0;
             createButtons(`<button class="ctrl-btn action-btn" id="btn-flap">ВЗЛЕТАТЬ 🕊️</button>`);
-            document.getElementById('btn-flap').onclick = () => f_flap();
-            canvas.onclick = f_flap;
-            f_update();
+            document.getElementById('btn-flap').onclick = () => f_flap(); canvas.onclick = f_flap; f_update();
         }
-
-        function f_flap() {
-            if (f_isGameOver) {
-                // Рестарт
-                cancelAnimationFrame(animationId); // Останавливаем старый цикл
-                startFlappy(); // Перезапускаем
-            } else {
-                f_velocity = f_jump;
-            }
-        }
-
+        function f_flap() { if (f_isGameOver) { cancelAnimationFrame(animationId); startFlappy(); } else { f_velocity = f_jump; } }
         function f_update() {
-            if (currentGame !== 'flappy') return;
-            
-            // Физика
-            f_velocity += f_gravity;
-            f_bird.y += f_velocity;
-
-            // Отрисовка фона
-            ctx.fillStyle = '#87CEEB';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+            if (currentGame !== 'flappy') return; f_velocity += f_gravity; f_bird.y += f_velocity;
+            ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             if (!f_isGameOver) {
-                // Генерация труб
-                if (Math.random() < 0.01) { // Реже генерируем
-                    let gap = 150;
-                    let h = Math.random() * (canvas.height - gap - 100) + 50;
-                    f_pipes.push({ x: canvas.width, h: h, gap: gap, passed: false });
-                }
-
-                // Трубы
+                if (Math.random() < 0.01) { let gap = 150; let h = Math.random() * (canvas.height - gap - 100) + 50; f_pipes.push({ x: canvas.width, h: h, gap: gap, passed: false }); }
                 ctx.fillStyle = '#2ecc71';
                 for (let i = 0; i < f_pipes.length; i++) {
-                    let pipe = f_pipes[i];
-                    pipe.x -= f_pipeSpeed;
-
-                    // Верхняя труба
-                    ctx.fillRect(pipe.x, 0, 50, pipe.h);
-                    // Нижняя труба
-                    ctx.fillRect(pipe.x, pipe.h + pipe.gap, 50, canvas.height);
-
-                    // Столкновение
-                    if (f_bird.x + f_bird.size > pipe.x && f_bird.x - f_bird.size < pipe.x + 50) {
-                        if (f_bird.y - f_bird.size < pipe.h || f_bird.y + f_bird.size > pipe.h + pipe.gap) {
-                            f_gameOverFlappy();
-                        }
-                    }
-
-                    // Счет
-                    if (pipe.x + 50 < f_bird.x && !pipe.passed) {
-                        pipe.passed = true;
-                        f_score++;
-                        scoreEl.innerText = f_score;
-                    }
+                    let pipe = f_pipes[i]; pipe.x -= f_pipeSpeed;
+                    ctx.fillRect(pipe.x, 0, 50, pipe.h); ctx.fillRect(pipe.x, pipe.h + pipe.gap, 50, canvas.height);
+                    if (f_bird.x + f_bird.size > pipe.x && f_bird.x - f_bird.size < pipe.x + 50) { if (f_bird.y - f_bird.size < pipe.h || f_bird.y + f_bird.size > pipe.h + pipe.gap) f_isGameOver = true; }
+                    if (pipe.x + 50 < f_bird.x && !pipe.passed) { pipe.passed = true; f_score++; scoreEl.innerText = f_score; }
                 }
-                
-                // Удаление старых труб
                 if (f_pipes.length && f_pipes[0].x < -50) f_pipes.shift();
+                if (f_bird.y + f_bird.size > canvas.height || f_bird.y - f_bird.size < 0) f_isGameOver = true;
+            }
+            ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.arc(f_bird.x, f_bird.y, f_bird.size, 0, Math.PI * 2); ctx.fill();
+            if (f_isGameOver) { ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = 'white'; ctx.font = '40px Arial'; ctx.textAlign = 'center'; ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2); ctx.font = '20px Arial'; ctx.fillText('Нажми, чтобы лететь', canvas.width/2, canvas.height/2 + 40); return; }
+            animationId = requestAnimationFrame(f_update);
+        }
+        function flappyKeyDown(e) { if (e.keyCode === 32) f_flap(); }
 
-                // Пол и потолок
-                if (f_bird.y + f_bird.size > canvas.height || f_bird.y - f_bird.size < 0) {
-                    f_gameOverFlappy();
+        /* --- ARKANOID --- */
+        let a_paddle, a_ball, a_bricks, a_score, a_isGameOver;
+        function startArkanoid() {
+            resizeCanvas(480, 600); a_paddle = { x: 190, y: 570, w: 100, h: 15 }; a_ball = { x: 240, y: 300, r: 8, dx: 4, dy: -4 }; a_bricks = []; a_score = 0; a_isGameOver = false; scoreEl.innerText = 0;
+            for (let i = 0; i < 8; i++) { for (let j = 0; j < 5; j++) { a_bricks.push({ x: 10 + i * 58, y: 50 + j * 25, w: 50, h: 20, alive: true }); } }
+            createButtons(`<div class="dpad-grid" style="grid-template-columns: repeat(2, 80px);"><button class="ctrl-btn dpad-btn" style="width:80px; height:60px;" id="btn-a-left">◀◀</button><button class="ctrl-btn dpad-btn" style="width:80px; height:60px;" id="btn-a-right">▶▶</button></div>`);
+            document.getElementById('btn-a-left').onclick = () => a_movePaddle(-30); document.getElementById('btn-a-right').onclick = () => a_movePaddle(30); a_update();
+        }
+        function a_movePaddle(dir) { a_paddle.x += dir; if (a_paddle.x < 0) a_paddle.x = 0; if (a_paddle.x + a_paddle.w > canvas.width) a_paddle.x = canvas.width - a_paddle.w; }
+        function a_update() {
+            if (currentGame !== 'arkanoid') return; if (a_isGameOver) return;
+            a_ball.x += a_ball.dx; a_ball.y += a_ball.dy;
+            if (a_ball.x > canvas.width - a_ball.r || a_ball.x < a_ball.r) a_ball.dx *= -1; if (a_ball.y < a_ball.r) a_ball.dy *= -1;
+            if (a_ball.y + a_ball.r > a_paddle.y && a_ball.x > a_paddle.x && a_ball.x < a_paddle.x + a_paddle.w) { a_ball.dy = -Math.abs(a_ball.dy); let hitPos = (a_ball.x - a_paddle.x) / a_paddle.w; a_ball.dx = 8 * (hitPos - 0.5); }
+            if (a_ball.y > canvas.height) a_isGameOver = true;
+            ctx.fillStyle = '#111'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            let allBroken = true;
+            a_bricks.forEach(brick => { if (!brick.alive) return; allBroken = false; ctx.fillStyle = '#e74c3c'; ctx.fillRect(brick.x, brick.y, brick.w, brick.h); if (a_ball.x + a_ball.r > brick.x && a_ball.x - a_ball.r < brick.x + brick.w && a_ball.y + a_ball.r > brick.y && a_ball.y - a_ball.r < brick.y + brick.h) { brick.alive = false; a_ball.dy *= -1; a_score++; scoreEl.innerText = a_score; } });
+            ctx.fillStyle = '#3498db'; ctx.fillRect(a_paddle.x, a_paddle.y, a_paddle.w, a_paddle.h);
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(a_ball.x, a_ball.y, a_ball.r, 0, Math.PI * 2); ctx.fill();
+            if (allBroken) { a_isGameOver = true; ctx.fillStyle = 'rgba(0,255,0,0.5)'; ctx.fillRect(0,0,canvas.width, canvas.height); ctx.fillStyle = 'white'; ctx.font = '40px Arial'; ctx.textAlign = 'center'; ctx.fillText('ПОБЕДА!', canvas.width/2, canvas.height/2); return; }
+            if (a_isGameOver) { ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0,0,canvas.width, canvas.height); ctx.fillStyle = 'white'; ctx.font = '40px Arial'; ctx.textAlign = 'center'; ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2); return; }
+            animationId = requestAnimationFrame(a_update);
+        }
+        function arkanoidKeyDown(e) { if (e.keyCode === 37) a_movePaddle(-30); if (e.keyCode === 39) a_movePaddle(30); }
+
+        /* --- BLOCK BLAST (ИСПРАВЛЕНО: ЛЕГКО УПРАВЛЯТЬ) --- */
+        let bb_grid, bb_score, bb_highScore, bb_cellSize, bb_cols, bb_rows, bb_pieces, bb_dragPiece, bb_dragPos, bb_gameOver, bb_trayY, bb_validPos, bb_flash;
+        const bb_colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#1abc9c'];
+
+        function startBlockBlast() {
+            bb_cols = 8; bb_rows = 8; bb_cellSize = 36;
+            let gridH = bb_cols * bb_cellSize;
+            bb_trayY = gridH + 15;
+            resizeCanvas(gridH, gridH + 130);
+
+            bb_highScore = localStorage.getItem('bb_highscore') || 0;
+            bb_grid = [];
+            for(let i=0; i<bb_cols; i++) {
+                bb_grid[i] = [];
+                for(let j=0; j<bb_rows; j++) bb_grid[i][j] = 0;
+            }
+            
+            bb_score = 0;
+            bb_gameOver = false;
+            bb_flash = 0;
+            bb_pieces = [];
+            bb_dragPiece = null;
+            bb_validPos = null;
+            
+            bb_generatePieces();
+            bb_updateScore();
+            
+            const getPos = (e) => {
+                let rect = canvas.getBoundingClientRect();
+                let scaleX = canvas.width / rect.width;
+                let scaleY = canvas.height / rect.height;
+                let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+            };
+
+            canvas.onmousedown = (e) => { e.preventDefault(); bb_onDown(getPos(e)); };
+            canvas.ontouchstart = (e) => { e.preventDefault(); bb_onDown(getPos(e)); };
+
+            canvas.onmousemove = (e) => { bb_onMove(getPos(e)); };
+            canvas.ontouchmove = (e) => { e.preventDefault(); bb_onMove(getPos(e)); };
+
+            window.onmouseup = (e) => { bb_onUp(getPos(e)); };
+            window.ontouchend = (e) => { bb_onUp(getPos(e)); };
+
+            createButtons(`<button class="ctrl-btn action-btn" onclick="startBlockBlast()">🔄 Заново</button>`);
+            bb_draw();
+        }
+
+        function bb_generatePieces() {
+            bb_pieces = [];
+            let space = canvas.width / 3;
+            let shapes = [
+                [[1,1,1]], [[1,1],[1,1]], [[1,0],[1,1]], [[0,1],[1,1]], 
+                [[1,1,0],[0,1,1]], [[0,1,1],[1,1,0]], [[0,1,0],[1,1,1]], [[1]], [[1,1]], [[1],[1]]
+            ];
+            for(let i=0; i<3; i++) {
+                let shape = shapes[Math.floor(Math.random() * shapes.length)];
+                let color = bb_colors[Math.floor(Math.random() * bb_colors.length)];
+                // Размер фигуры в пикселях для рисования
+                let pieceDrawSize = 30; 
+                let w = shape[0].length * pieceDrawSize;
+                let h = shape.length * pieceDrawSize;
+                let x = i * space + (space/2) - w/2;
+                let y = bb_trayY + 20;
+                // Сохраняем и размер клетки поля (cellSize) для расчетов
+                bb_pieces.push({ shape, color, x, y, w, h, pieceDrawSize, used: false });
+            }
+            if (!bb_canPlaceAny()) bb_gameOver = true;
+        }
+
+        function bb_draw() {
+            if (currentGame !== 'blockblast') return;
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (bb_flash > 0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${bb_flash})`;
+                ctx.fillRect(0, 0, canvas.width, bb_trayY);
+                bb_flash -= 0.1;
+            }
+
+            // Сетка
+            for(let i=0; i<bb_cols; i++) {
+                for(let j=0; j<bb_rows; j++) {
+                    let val = bb_grid[i][j];
+                    ctx.fillStyle = val ? val : '#222';
+                    roundRect(ctx, i * bb_cellSize + 1, j * bb_cellSize + 1, bb_cellSize - 2, bb_cellSize - 2, 3, val ? val : '#222', val ? 0 : 1);
+                }
+            }
+            
+            ctx.strokeStyle = '#444';
+            ctx.beginPath();
+            ctx.moveTo(0, bb_trayY - 5);
+            ctx.lineTo(canvas.width, bb_trayY - 5);
+            ctx.stroke();
+
+            // Фигуры в треи (рисуем с их личным размером pieceDrawSize)
+            bb_pieces.forEach(p => { if(!p.used) bb_drawShape(p.shape, p.x, p.y, p.color, p.pieceDrawSize); });
+
+            // Тень
+            if (bb_dragPiece && bb_validPos) {
+                let color = bb_validPos.valid ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.2)';
+                if (bb_validPos.valid) {
+                     bb_drawShapeOnGrid(bb_dragPiece.shape, bb_validPos.x, bb_validPos.y, color);
                 }
             }
 
-            // Птичка
-            ctx.fillStyle = '#f1c40f';
-            ctx.beginPath();
-            ctx.arc(f_bird.x, f_bird.y, f_bird.size, 0, Math.PI * 2);
-            ctx.fill();
+            // Перетаскиваемая фигура
+            if (bb_dragPiece) {
+                // Рисуем её там, где курсор, но размер берем из её свойств
+                let offsetX = bb_dragPiece.w / 2;
+                let offsetY = bb_dragPiece.h / 2;
+                bb_drawShape(bb_dragPiece.shape, bb_dragPos.x - offsetX, bb_dragPos.y - offsetY, bb_dragPiece.color, bb_dragPiece.pieceDrawSize);
+            }
+            
+            ctx.fillStyle = '#888';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('Рекорд: ' + bb_highScore, 5, 15);
 
-            // Game Over экран
-            if (f_isGameOver) {
-                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            if (bb_gameOver) {
+                ctx.fillStyle = 'rgba(0,0,0,0.85)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = 'white';
                 ctx.font = '40px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
-                ctx.font = '20px Arial';
-                ctx.fillText('Нажми, чтобы лететь', canvas.width/2, canvas.height/2 + 40);
-                return; // Остановка цикла
+                ctx.fillText('ИГРА', canvas.width/2, canvas.height/2 - 30);
+                ctx.fillText('ОКОНЧЕНА', canvas.width/2, canvas.height/2 + 20);
+                ctx.font = '16px Arial';
+                ctx.fillText('Нажми "Заново"', canvas.width/2, canvas.height/2 + 60);
             }
-
-            animationId = requestAnimationFrame(f_update);
-        }
-
-        function f_gameOverFlappy() {
-            f_isGameOver = true;
-        }
-        
-        function flappyKeyDown(e) { if (e.keyCode === 32) f_flap(); }
-
-        /* --- ARKANOID (ИСПРАВЛЕНО) --- */
-        let a_paddle, a_ball, a_bricks, a_score, a_isGameOver;
-        
-        function startArkanoid() {
-            resizeCanvas(480, 600);
-            a_paddle = { x: 190, y: 570, w: 100, h: 15 };
-            a_ball = { x: 240, y: 300, r: 8, dx: 4, dy: -4 };
-            a_bricks = [];
-            a_score = 0;
-            a_isGameOver = false;
-            scoreEl.innerText = 0;
-
-            for (let i = 0; i < 8; i++) {
-                for (let j = 0; j < 5; j++) {
-                    a_bricks.push({ x: 10 + i * 58, y: 50 + j * 25, w: 50, h: 20, alive: true });
-                }
-            }
-
-            createButtons(`<div class="dpad-grid" style="grid-template-columns: repeat(2, 80px);"><button class="ctrl-btn dpad-btn" style="width:80px; height:60px;" id="btn-a-left">◀◀</button><button class="ctrl-btn dpad-btn" style="width:80px; height:60px;" id="btn-a-right">▶▶</button></div>`);
             
-            document.getElementById('btn-a-left').onclick = () => a_movePaddle(-30);
-            document.getElementById('btn-a-right').onclick = () => a_movePaddle(30);
-
-            a_update();
+            if (bb_flash > 0) requestAnimationFrame(bb_draw);
         }
 
-        function a_movePaddle(dir) {
-            a_paddle.x += dir;
-            if (a_paddle.x < 0) a_paddle.x = 0;
-            if (a_paddle.x + a_paddle.w > canvas.width) a_paddle.x = canvas.width - a_paddle.w;
-        }
-
-        function a_update() {
-            if (currentGame !== 'arkanoid') return;
-            if (a_isGameOver) return;
-
-            // Движение мяча
-            a_ball.x += a_ball.dx;
-            a_ball.y += a_ball.dy;
-
-            // Отскоки от стен
-            if (a_ball.x > canvas.width - a_ball.r || a_ball.x < a_ball.r) a_ball.dx *= -1;
-            if (a_ball.y < a_ball.r) a_ball.dy *= -1;
-
-            // Отскок от платформы
-            if (a_ball.y + a_ball.r > a_paddle.y && 
-                a_ball.x > a_paddle.x && 
-                a_ball.x < a_paddle.x + a_paddle.w) {
-                a_ball.dy = -Math.abs(a_ball.dy); // Всегда вверх
-                // Угол отскока зависит от места удара
-                let hitPos = (a_ball.x - a_paddle.x) / a_paddle.w;
-                a_ball.dx = 8 * (hitPos - 0.5); 
-            }
-
-            // Падение
-            if (a_ball.y > canvas.height) {
-                a_isGameOver = true;
-            }
-
-            // Отрисовка
-            ctx.fillStyle = '#111';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Кирпичи
-            let allBroken = true;
-            a_bricks.forEach(brick => {
-                if (!brick.alive) return;
-                allBroken = false;
-                ctx.fillStyle = '#e74c3c';
-                ctx.fillRect(brick.x, brick.y, brick.w, brick.h);
-                
-                // Столкновение с кирпичом
-                if (a_ball.x + a_ball.r > brick.x && a_ball.x - a_ball.r < brick.x + brick.w &&
-                    a_ball.y + a_ball.r > brick.y && a_ball.y - a_ball.r < brick.y + brick.h) {
-                    brick.alive = false;
-                    a_ball.dy *= -1;
-                    a_score++;
-                    scoreEl.innerText = a_score;
-                }
-            });
-
-            // Платформа
-            ctx.fillStyle = '#3498db';
-            ctx.fillRect(a_paddle.x, a_paddle.y, a_paddle.w, a_paddle.h);
-
-            // Мяч
-            ctx.fillStyle = '#fff';
+        function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
             ctx.beginPath();
-            ctx.arc(a_ball.x, a_ball.y, a_ball.r, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Победа
-            if (allBroken) {
-                 a_isGameOver = true;
-                 ctx.fillStyle = 'rgba(0,255,0,0.5)';
-                 ctx.fillRect(0,0,canvas.width, canvas.height);
-                 ctx.fillStyle = 'white';
-                 ctx.font = '40px Arial';
-                 ctx.textAlign = 'center';
-                 ctx.fillText('ПОБЕДА!', canvas.width/2, canvas.height/2);
-                 return;
-            }
-
-            if (a_isGameOver) {
-                ctx.fillStyle = 'rgba(0,0,0,0.7)';
-                ctx.fillRect(0,0,canvas.width, canvas.height);
-                ctx.fillStyle = 'white';
-                ctx.font = '40px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
-                ctx.font = '20px Arial';
-                ctx.fillText('Нажми кнопку', canvas.width/2, canvas.height/2 + 40);
-                return;
-            }
-
-            animationId = requestAnimationFrame(a_update);
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+            if (stroke) { ctx.strokeStyle = '#333'; ctx.stroke(); }
         }
-        
-        function arkanoidKeyDown(e) {
-            if (e.keyCode === 37) a_movePaddle(-30);
-            if (e.keyCode === 39) a_movePaddle(30);
+
+        function bb_drawShape(shape, x, y, color, size) {
+            shape.forEach((row, rj) => {
+                row.forEach((val, ri) => {
+                    if(val) {
+                        roundRect(ctx, x + ri * size + 1, y + rj * size + 1, size - 2, size - 2, 3, color, 0);
+                    }
+                });
+            });
         }
+
+        function bb_drawShapeOnGrid(shape, gx, gy, color) {
+            shape.forEach((row, rj) => {
+                row.forEach((val, ri) => {
+                    if(val && gx + ri >= 0 && gy + rj >= 0) {
+                         roundRect(ctx, (gx + ri) * bb_cellSize, (gy + rj) * bb_cellSize, bb_cellSize - 2, bb_cellSize - 2, 3, color, 0);
+                    }
+                });
+            });
+        }
+
+        function bb_onDown(pos) {
+            if (bb_gameOver) return;
+            for (let i = bb_pieces.length - 1; i >= 0; i--) {
+                let p = bb_pieces[i];
+                if (!p.used && pos.x > p.x && pos.x < p.x + p.w && pos.y > p.y && pos.y < p.y + p.h) {
+                    bb_dragPiece = p;
+                    bb_dragPos = pos;
+                    bb_draw();
+                    return;
+                }
+            }
+        }
+
+        function bb_onMove(pos) {
+            if (bb_dragPiece) {
+                bb_dragPos = pos;
+                
+                // ГЛАВНОЕ ИСПРАВЛЕНИЕ: Центрируем фигуру относительно курсора
+                // Округляем до ближайшей клетки (round), чтобы фигура "прилипала" к сетке
+                let shapeW = bb_dragPiece.shape[0].length;
+                let shapeH = bb_dragPiece.shape.length;
+                
+                let tx = Math.round((pos.x / bb_cellSize) - (shapeW / 2));
+                let ty = Math.round((pos.y / bb_cellSize) - (shapeH / 2));
+
+                let canPlace = bb_canPlace(bb_dragPiece.shape, tx, ty);
+                bb_validPos = {x: tx, y: ty, valid: canPlace};
+                
+                bb_draw();
+            }
+        }
+
+        function bb_onUp(pos) {
+            if (!bb_dragPiece) return;
+            
+            if (bb_validPos && bb_validPos.valid) {
+                bb_placeShape(bb_dragPiece.shape, bb_validPos.x, bb_validPos.y, bb_dragPiece.color);
+                bb_dragPiece.used = true;
+                
+                let cleared = bb_checkLines();
+                if (cleared > 0) bb_flash = 0.5;
+                
+                bb_updateScore();
+                
+                if(bb_pieces.every(p => p.used)) bb_generatePieces();
+                else if (!bb_canPlaceAny()) bb_gameOver = true;
+            }
+            
+            bb_dragPiece = null;
+            bb_validPos = null;
+            bb_draw();
+        }
+
+        function bb_canPlace(shape, gx, gy) {
+            for(let rj=0; rj<shape.length; rj++) {
+                for(let ri=0; ri<shape[rj].length; ri++) {
+                    if(shape[rj][ri]) {
+                        let x = gx + ri; let y = gy + rj;
+                        if (x < 0 || x >= bb_cols || y < 0 || y >= bb_rows || bb_grid[x][y]) return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function bb_placeShape(shape, gx, gy, color) {
+            shape.forEach((row, rj) => {
+                row.forEach((val, ri) => {
+                    if(val) { bb_grid[gx + ri][gy + rj] = color; bb_score += 10; }
+                });
+            });
+        }
+
+        function bb_checkLines() {
+            let linesCleared = 0;
+            for(let j=bb_rows-1; j>=0; j--) {
+                if(bb_grid.every(col => col[j])) {
+                    for(let i=0; i<bb_cols; i++) bb_grid[i][j] = 0;
+                    linesCleared++;
+                }
+            }
+            for(let i=0; i<bb_cols; i++) {
+                if(bb_grid[i].every(cell => cell)) {
+                    for(let j=0; j<bb_rows; j++) bb_grid[i][j] = 0;
+                    linesCleared++;
+                }
+            }
+            
+            if (linesCleared > 0) {
+                let bonus = [0, 100, 300, 500, 800];
+                bb_score += bonus[Math.min(linesCleared, 4)];
+                
+                if (bb_score > bb_highScore) {
+                    bb_highScore = bb_score;
+                    localStorage.setItem('bb_highscore', bb_highScore);
+                }
+            }
+            
+            return linesCleared;
+        }
+
+        function bb_canPlaceAny() {
+            for(let p of bb_pieces) {
+                if(p.used) continue;
+                for(let i=0; i<bb_cols; i++) for(let j=0; j<bb_rows; j++) if(bb_canPlace(p.shape, i, j)) return true;
+            }
+            return false;
+        }
+
+        function bb_updateScore() { scoreEl.innerText = "Счет: " + bb_score; }
 
     </script>
 </body>
